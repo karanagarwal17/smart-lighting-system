@@ -1,1 +1,1 @@
-# smart-lighting-system
+# Smart Lighting System
