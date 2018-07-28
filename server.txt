@@ -1,0 +1,87 @@
+//This code has been written for use with the instructable
+//Indoor Environmental Quality station
+//http://www.instructables.com/member/donmatito/
+//inspired from ThingSpeak.pde by Lars Schumann (make.larsi.org)
+
+//This sketch receives input from an Arduino weather station through Serial port
+//It parses it into "fields" and values
+//then sends theses values to a Thingspeak channel through a URL call
+
+import processing.serial.*;
+
+Serial myPort;
+
+// Datalogging server Thingspeak, API key ABC123456789
+String SERVER   = "https://api.thingspeak.com/update?api_key=ABC123456789";
+
+String url = SERVER;
+
+// Station channels
+String labels[] = {     "lightValue",  "soundValue",  "motionValue",  "bulb" };
+String fields[] = {      "field1", "field2", "field3", "field4" };
+float values[] = {            0,          0,         0,          0 };
+
+void setup(){
+  size(800, 200);
+  background(255);
+    
+  // List all the available serial ports:
+  println(Serial.list());
+  // Open the port you are using at the rate you want:
+  myPort = new Serial(this, "COM8", 9600);
+  myPort.clear();
+  myPort.bufferUntil('\n'); //read one line at a time
+
+}
+
+void draw(){
+  background(255);
+  fill(0);
+  
+  for (int i = 0; i < labels.length; i++){
+    text(labels[i] + " " + values[i], 10, 20*(i+1));
+  }
+  text(url, 10, 20*(9));
+}
+
+void serialEvent(Serial port){
+  String data = port.readString(); //one line has been buffered
+  url = SERVER;
+  
+  if (data != null) {
+    //first, all the data fields are split by semicolon
+    String[] data_fields = split(data, ';');
+    
+    //each data_field is composed of the label, then the value, separated by a coma
+    for (int j = 0; j < data_fields.length; j++){
+      String[] data_split = split(data_fields[j], ',');
+      
+      if (data_split[0] != null && data_split[1] != null){
+        String data_label = data_split[0];
+        float data_value = Float.valueOf(data_split[1]);
+        
+        for (int i = 0; i < labels.length; i++){
+          if (data_label.equals(labels[i])){
+            //if a line is read and corresponds to a field name, update it
+            values[i] = data_value;
+          }
+        }
+      }
+    }
+    
+    //then send all data to thingspeak
+    for (int i = 0; i < labels.length; i++){
+      url += "&" + fields[i] + "=" + values[i];
+    }
+    try {
+      java.io.BufferedReader reader = new java.io.BufferedReader(
+      new java.io.InputStreamReader(new java.net.URL(url).openStream()));
+    }
+    catch (java.io.IOException e) {
+      e.printStackTrace();
+    }
+   }  
+}
+
+
+  

@@ -1,0 +1,64 @@
+#include<SoftwareSerial.h>
+
+int ldr = 0;
+int pirSensor = 8;
+int soundSensor = 3;
+int power = 12;
+int relay = 10;
+int lightSensitivity = 560;
+int lightValue = 0;
+int soundValue = 0;
+int motionValue = 0;
+int bulb = 0;
+int count = 0;
+SoftwareSerial BTserial(4,2);
+
+void setup() {
+  pinMode(ldr, INPUT);
+  pinMode(soundSensor, INPUT);
+  pinMode(pirSensor, INPUT);
+  pinMode(relay, OUTPUT);
+  pinMode(13, OUTPUT);
+  pinMode(power, OUTPUT);
+
+  Serial.begin(9600);
+  BTserial.begin(9600);
+}
+
+void loop() {
+  //digitalWrite(relay , LOW);
+  digitalWrite(power, HIGH);
+  motionValue = digitalRead(pirSensor);
+  lightValue = analogRead(ldr);
+  soundValue = analogRead(soundSensor);
+  if (lightValue < lightSensitivity && (motionValue == 1 || soundValue > 160) && count == 0) {
+    digitalWrite(relay, HIGH); // The Relay Input works Inversly
+    digitalWrite(13, HIGH);
+    bulb = 1;
+    count = 20;
+  } else if(count == 0) {
+    digitalWrite(relay, LOW);
+    digitalWrite(13, LOW);
+    bulb = 0;
+  } else if(count > 0){
+    count = count - 1;
+  }
+  delay(100);
+  Serial.print("lightValue,");
+  Serial.print(lightValue);
+  Serial.print(";soundValue,");
+  Serial.print(soundValue);
+  Serial.print(";motionValue,");
+  Serial.print(motionValue);
+  Serial.print(";bulb,");
+  Serial.println(bulb);
+  BTserial.print("lightValue,");
+  BTserial.print(lightValue);
+  BTserial.print(";soundValue,");
+  BTserial.print(soundValue);
+  BTserial.print(";motionValue,");
+  BTserial.print(motionValue);
+  BTserial.print(count);
+  BTserial.print(";bulb,");
+  BTserial.println(bulb);
+}
